@@ -17,11 +17,11 @@ This Python script utilizes Tkinter to create a simple GUI application for downl
 
 2. Navigate to the project directory:
 
-$ cd your_repo
+$cd your_repo
 
 3. Install the required packages:
 
-$ pip install pytube Pillow
+$pip install pytube Pillow
 
 
 ## Usage
