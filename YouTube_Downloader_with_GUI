@@ -1,0 +1,122 @@
+import tkinter as tk
+from tkinter import filedialog, ttk
+from pytube import YouTube
+from PIL import Image, ImageTk
+import requests
+from io import BytesIO
+import os
+
+def on_progress(stream, chunk, bytes_remaining):
+    total_size = stream.filesize
+    bytes_downloaded = total_size - bytes_remaining
+    percent = (bytes_downloaded / total_size) * 100
+    progress_var.set(percent)
+    root.update_idletasks()
+
+current_directory = None
+
+def browse_directory():
+    global current_directory
+    selected_directory = filedialog.askdirectory()
+    if selected_directory:
+        download_dir.set(selected_directory)
+        current_directory = selected_directory
+    elif current_directory:  # If current_directory is not None, set it back to the previous directory
+        download_dir.set(current_directory)  
+def start_download():
+    try:
+        download_button.config(text="Please wait...")
+        root.update()
+        link = url_entry.get()
+        directory = download_dir.get()
+        yt = YouTube(link, on_progress_callback=on_progress)
+
+        # Get highest resolution stream
+        yd = yt.streams.get_highest_resolution()
+
+        # Update video title
+        title_label.config(text=yt.title)
+        root.update()
+
+        # Update thumbnail
+        response = requests.get(yt.thumbnail_url)
+        img_data = response.content
+        img = Image.open(BytesIO(img_data))
+        img = img.resize((320, 180), Image.LANCZOS)  # Resize thumbnail
+        img = ImageTk.PhotoImage(img)
+        thumbnail_label.config(image=img)
+        thumbnail_label.image = img
+        root.update()
+
+        # Start download
+        yd.download(directory)
+        download_button.config(text="Download", width=len(download_button.cget("text")) + 2)
+        download_status.config(text="Download completed successfully!", fg="green")
+
+    except Exception as e:
+        download_button.config(text="Download", width=len(download_button.cget("text")) + 2)
+        download_status.config(text=f"An error occurred: {e}", fg="red")
+
+def clear_url():
+    url_entry.delete(0, tk.END)  # Clear the URL entry
+    title_label.config(text="")  # Reset the video title
+    white_thumbnail = Image.new("RGB", (0, 0), color="white")  # Create a white thumbnail image
+    white_thumbnail = ImageTk.PhotoImage(white_thumbnail)  # Convert to PhotoImage
+    thumbnail_label.config(image=white_thumbnail)  # Display the white thumbnail image
+    thumbnail_label.image = white_thumbnail  # Keep a reference
+    progress_var.set(0)  # Reset the progress bar
+    download_status.config(text="")  # Clear the download status message
+
+# Get the desktop path
+desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+
+# Create main window
+root = tk.Tk()
+root.title("YouTube Video Downloader")
+root.configure(bg="white")  # Set background to white
+
+# Set minimum size for the window
+root.minsize(500, 200)
+
+# YouTube link entry
+tk.Label(root, text="YouTube Link:", bg="white", anchor="e").grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+url_entry = tk.Entry(root, width=50)
+url_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+url_entry.focus_set()  # Focus on URL entry
+url_entry.insert(tk.END, "")  # Insert an empty string to make the cursor blink
+
+# Clear button
+clear_button = tk.Button(root, text="Clear", command=clear_url, width=10)
+clear_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
+
+# Download directory entry
+tk.Label(root, text="Download Directory:", bg="white", anchor="e").grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+download_dir = tk.StringVar(value=desktop_path)
+dir_entry = tk.Entry(root, textvariable=download_dir, width=50)
+dir_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+browse_button = tk.Button(root, text="Browse", command=browse_directory)
+browse_button.grid(row=1, column=2, padx=10, pady=5, sticky="ew")
+
+# Video title label
+title_label = tk.Label(root, text="", bg="white")
+title_label.grid(row=2, column=0, columnspan=3, padx=10, pady=(0, 5), sticky="ew")
+
+# Thumbnail label
+thumbnail_label = tk.Label(root, bg="white")
+thumbnail_label.grid(row=3, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
+
+# Progress bar
+progress_var = tk.DoubleVar()
+progress_bar = ttk.Progressbar(root, variable=progress_var, maximum=100)
+progress_bar.grid(row=4, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
+
+# Download button
+download_button = tk.Button(root, text="Download", command=start_download)
+download_button.grid(row=5, column=0, columnspan=3, padx=230, pady=5, sticky="ew")
+
+# Download status label
+download_status = tk.Label(root, text="", fg="green", bg="white")
+download_status.grid(row=6, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
+
+# Start the GUI event loop
+root.mainloop()

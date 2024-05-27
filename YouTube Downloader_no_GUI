@@ -1,0 +1,17 @@
+from pytube import YouTube
+from sys import argv
+
+def on_progress(stream, chunk, bytes_remaining):
+    total_size = stream.filesize
+    bytes_downloaded = total_size - bytes_remaining
+    print(f"Downloaded {bytes_downloaded / 1024 / 1024:.2f} MB so far")
+
+link = argv[1]
+yt = YouTube(link, on_progress_callback=on_progress)
+
+yd = yt.streams.get_highest_resolution()
+
+print("Title: ", yt.title)
+
+# Download video
+yd.download('C:/Users/Konstantinos/Desktop')
