@@ -11,7 +11,8 @@ This Python script utilizes Tkinter to create a simple GUI application for downl
 ## Installation
 
 1. Clone the repository:
-
+2. 
+```bash
 `git clone https://github.com/your_username/your_repo.git`
 
 
